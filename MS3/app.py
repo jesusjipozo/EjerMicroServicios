@@ -5,7 +5,7 @@ app1 = Flask(__name__)
 
 '''funcion: decmografia .json info demografica'''
 
-@app1.route('/<int:municipioid>/demogra', methods=['GET'])
+@app1.route('/<int:municipioid>/demo', methods=['GET'])
 def get_geo(municipioid):
      try:
          # Abrimos el archivo JSON donde están los datos del municipio

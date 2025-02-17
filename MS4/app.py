@@ -1,127 +1,64 @@
 from flask import Flask, jsonify
 import requests
-import json
 
-app2 = Flask(__name__)
+app4 = Flask(__name__)
 
-API_BASE_URL = "https://www.el-tiempo.net/api/json/v2/provincias/18/municipios"
+# Definir las URLs de los microservicios
+MS1_URL = "http://127.0.0.1:5000"  # Microservicio Geo
+MS2_URL = "http://127.0.0.1:5001"  # Microservicio Meteo
+MS3_URL = "http://127.0.0.1:5002"  # Microservicio Demo
 
+@app4.route('/<int:municipioid>/<path:subpaths>', methods=['GET'])
+def get_combined_data(municipioid, subpaths=None):
+    # Dividir las rutas en una lista de servicios
+    services = subpaths.split('/')
 
-# Función para obtener los datos meteorológicos
-def get_meteo_data(municipioid):
-    try:
-        # Hacer la petición a la API del tiempo
-        url = f"{API_BASE_URL}/{municipioid}"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json().get("today", {})
-        meteo = {
-            "Temperatura Actual": data.get("temperatura_actual"),
-            "Temperatura Máxima": data.get("temperatura_maxima"),
-            "Temperatura Mínima": data.get("temperatura_minima"),
-            "Humedad": data.get("humedad"),
-            "Viento": data.get("viento", {}).get("velocidad"),
-            "Precipitación": data.get("precipitacion", "Desconocida"),
-            "Lluvia": data.get("lluvia", "No especificada")
-        }
-        return meteo, None
-    except requests.RequestException as e:
-        return None, f"Error al conectar con la API: {str(e)}"
+    geo_data, meteo_data, demo_data = None, None, None
 
+    # Iterar sobre los servicios en la URL para hacer las solicitudes correspondientes
+    for service in services:
+        if service == "geo":
+            # Realizar la solicitud al microservicio de Geo
+            print(f"Haciendo solicitud GET a: {MS1_URL}/{municipioid}/geo")
+            response = requests.get(f"{MS1_URL}/{municipioid}/geo")
+            print("Respuesta de MS1:", response.status_code, response.text)
 
-# Función para obtener los datos del municipio desde municipio.json
-def get_municipio_data(municipioid):
-    try:
-        with open("municipio.json", "r") as file:
-            municipio = json.load(file)
-            if municipio["municipioid"] == municipioid:
-                return municipio, None
-            return None, "Municipio no encontrado"
-    except FileNotFoundError:
-        return None, "Archivo municipio.json no encontrado"
-    except json.JSONDecodeError:
-        return None, "Error al procesar el archivo municipio.json"
+            if response.status_code == 200:
+                geo_data = response.json()
+            else:
+                return jsonify({'error': 'Error al obtener datos Geo'}), 404
 
+        elif service == "meteo":
+            # Realizar la solicitud al microservicio de Meteo
+            print(f"Haciendo solicitud GET a: {MS2_URL}/{municipioid}/meteo")
+            response = requests.get(f"{MS2_URL}/{municipioid}/meteo")
+            print("Respuesta de MS2:", response.status_code, response.text)
 
-# Función para obtener los datos de demografía desde demografia.json
-def get_demografia_data(municipioid):
-    try:
-        with open("demografia.json", "r") as file:
-            demografia = json.load(file)
-            if demografia["municipioid"] == municipioid:
-                return demografia, None
-            return None, "Demografía no encontrada"
-    except FileNotFoundError:
-        return None, "Archivo demografia.json no encontrado"
-    except json.JSONDecodeError:
-        return None, "Error al procesar el archivo demografia.json"
+            if response.status_code == 200:
+                meteo_data = response.json()
+            else:
+                return jsonify({'error': 'Error al obtener datos Meteo'}), 404
 
+        elif service == "demo":
+            # Realizar la solicitud al microservicio de Demo
+            print(f"Haciendo solicitud GET a: {MS3_URL}/{municipioid}/demo")
+            response = requests.get(f"{MS3_URL}/{municipioid}/demo")
+            print("Respuesta de MS3:", response.status_code, response.text)
 
-@app2.route('/<int:municipioid>/meteo', methods=['GET'])
-def get_meteo(municipioid):
-    """
-    Devuelve los datos meteorológicos de un municipio.
-    """
-    meteo, error = get_meteo_data(municipioid)
-    if meteo:
-        return jsonify(meteo), 200
-    return jsonify({"error": error}), 500
+            if response.status_code == 200:
+                demo_data = response.json()
+            else:
+                return jsonify({'error': 'Error al obtener datos Demogra'}), 404
 
+        else:
+            return jsonify({'error': f"Servicio no válido: {service}"}), 400
 
-@app2.route('/<int:municipioid>/geo', methods=['GET'])
-def get_geo(municipioid):
-    """
-    Devuelve los datos geográficos (municipio) de un municipio.
-    """
-    municipio, error = get_municipio_data(municipioid)
-    if municipio:
-        return jsonify(municipio), 200
-    return jsonify({"error": error}), 500
-
-
-@app2.route('/<int:municipioid>/demografia', methods=['GET'])
-def get_demografia(municipioid):
-    """
-    Devuelve los datos demográficos de un municipio.
-    """
-    demografia, error = get_demografia_data(municipioid)
-    if demografia:
-        return jsonify(demografia), 200
-    return jsonify({"error": error}), 500
-
-
-@app2.route('/<int:municipioid>/<string:x>/<string:y>', methods=['GET'])
-def get_meteo_and_other_data(municipioid, x, y):
-    """
-    Devuelve los datos de `x` primero y luego los de `y`.
-    Se pueden pasar como `meteo`, `geo` o `demografia`.
-    """
-    result = {}
-
-    # Procesar la primera parte de la ruta (x)
-    if x == "meteo":
-        meteo, error = get_meteo_data(municipioid)
-        result[x] = meteo if meteo else {"error": error}
-    elif x == "geo":
-        municipio, error = get_municipio_data(municipioid)
-        result[x] = municipio if municipio else {"error": error}
-    elif x == "demografia":
-        demografia, error = get_demografia_data(municipioid)
-        result[x] = demografia if demografia else {"error": error}
-
-    # Procesar la segunda parte de la ruta (y)
-    if y == "meteo":
-        meteo, error = get_meteo_data(municipioid)
-        result[y] = meteo if meteo else {"error": error}
-    elif y == "geo":
-        municipio, error = get_municipio_data(municipioid)
-        result[y] = municipio if municipio else {"error": error}
-    elif y == "demografia":
-        demografia, error = get_demografia_data(municipioid)
-        result[y] = demografia if demografia else {"error": error}
-
-    return jsonify(result), 200
-
+    # Retornar los datos obtenidos de los microservicios
+    return jsonify({
+        "geo": geo_data,
+        "meteo": meteo_data,
+        "demo": demo_data
+    }), 200
 
 if __name__ == '__main__':
-    app2.run(port=5003)
+    app4.run(port=5003)

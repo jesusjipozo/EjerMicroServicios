@@ -84,8 +84,8 @@ if __name__ == '__main__':
         if __name__ == '__main__':
             app1.run(port=5000)
 
-8. en terminal ((venv1) carmen_gordo@pc124-8 MS1 %) se pone python3 app.py y este da una url. en el navegador se abre esta
-url, si se pone en nuestro caso: http://127.0.0.1:5000/18057/geo -> da una respuesta con el json, si se pone otro numero que 
+8. en terminal ((venv1) carmen_gordo@pc124-8 MS1 %) se pone: python3 app.py .Y este da una url. 
+En el navegador se abre esta url, si se pone en nuestro caso: http://127.0.0.1:5000/18057/geo -> da una respuesta con el json, si se pone otro numero que 
 no sea parecido al de "municipioid" (que esta en el .json) -> da error
 
 9. En MS2: se crea el "venv2" poniendo en el temrinal: carmen_gordo@pc124-8 MS2 % python3 -m venv venv2
