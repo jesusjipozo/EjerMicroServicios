@@ -34,4 +34,4 @@ def get_meteo(municipioid):
         return jsonify({"error": "Error al conectar con el servicio meteorológico"}), 500
 
 if __name__ == '__main__':
-    app2.run(port=5001)
+    app2.run(port=5002)

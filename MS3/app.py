@@ -22,4 +22,4 @@ def get_geo(municipioid):
 
 
 if __name__ == '__main__':
-    app1.run(port=5002)
+    app1.run(port=5003)
