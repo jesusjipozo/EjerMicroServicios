@@ -1,0 +1,38 @@
+version: '3.8'
+# Al final lo hemos puesto Rafa :) (dice Jesús que nos pongas un 10 por intentarlo)
+services:
+  servicio1:
+    build:
+      context: ./MS1
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=development
+
+  servicio2:
+    build:
+      context: ./MS2
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=development
+
+  servicio3:
+    build:
+      context: ./MS3
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      - FLASK_ENV=development
+
+  servicio4:
+    build:
+      context: ./MS4
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5004"
+    environment:
+      - FLASK_ENV=development
